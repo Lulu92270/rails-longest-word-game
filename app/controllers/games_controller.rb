@@ -1,13 +1,9 @@
-require 'json'
 require 'open-uri'
 require 'date'
 
 class GamesController < ApplicationController
   def new
-    @letters = []
-    10.times do 
-      @letters << many_votes
-    end
+    @letters = Array.new(10) { random_letter }
     @start_time = Time.now
   end
   
@@ -15,32 +11,24 @@ class GamesController < ApplicationController
 
     end_time = Time.now
 
+    @letters = params[:token]
+    @word = (params[:word] || "").upcase
+    @included = included?(@word, @letters)
+    @english_word = english_word?(@word)
+    score = compute_score(params[:word], end_time -  DateTime.parse(params[:start_time]))
     # raise
-    # RestClient - restart server
-
-  if english_word?(params[:word])
-    if included?(params[:word], params[:token])
-      score = compute_score(params[:word], end_time -  DateTime.parse(params[:start_time]))
-      @result = "Congratulations! #{params[:word]} is a valid English word! Score: #{score}"
-
-    else
-      @result = "Sorry but #{params[:word]} can't be built out of #{params[:token]}"
-    end
-  else
-    @result = "Sorry but #{params[:word]} doesn't seem to be a valid English word..."
   end
-end
 
   private
 
-  def many_votes
+  def random_letter
     ('A'..'Z').to_a.sample
   end
   
   def english_word?(word)
     url = open("https://wagon-dictionary.herokuapp.com/#{params[:word].split(/\W+/).join}")
     json = JSON.parse(url.read)
-    return json['found']
+    json['found']
   end
 
   def included?(guess, grid)
